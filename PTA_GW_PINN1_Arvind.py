@@ -12,8 +12,6 @@ nu = torch.tensor(1.0, dtype=torch.float32) #stated
 eta = torch.tensor(0.25, dtype=torch.float32) #assuming both SMBHs of identical mass (1e9 solar masses)
 chi = torch.tensor(0.9, dtype=torch.float32) #high spin SMBH assumed
 Q_15 = (((19/3) * eta - (113/12)) * chi + 4 * np.pi).float() #aligned spin case, 3rd term vanishes
-M = torch.tensor(2e9 * 1.9885e30, dtype=torch.float32)  #total mass in kg
-r = torch.tensor(1e13, dtype=torch.float32)  #typical orbital radius in meters
 
 class PINN(nn.Module):
   def __init__(self):
@@ -25,8 +23,7 @@ class PINN(nn.Module):
       nn.Tanh(),
       nn.Linear(32, 32),
       nn.Tanh(),
-      nn.Linear(32, 1), #output layer, 1 neuron (solution, omega)
-      nn.Softplus()
+      nn.Linear(32, 1) #output layer, 1 neuron (solution, omega)
     )
 
   def forward(self, x):
@@ -37,7 +34,7 @@ t_coal = 1.05*10**15
 t_0 = 0
 t = torch.rand(num_points, 1)*t_coal #b/w t=0 and coalescence time
 input = t.requires_grad_() #tells PyTorch to track gradients wrt inputs
-omg_enforced = torch.sqrt(G * M / r**3) #kepler's relation for typical omg value at t=0
+omg_enforced = torch.tensor(3.03* 1e-9, dtype=torch.float32) #kepler's relation for typical omg value at t=0, with M = 1e9 and R = 0.1pc
 
 t_bc1 = torch.tensor([t_coal], dtype=torch.float32).view(-1, 1)
 t_bc2 = torch.tensor([t_0], dtype=torch.float32).view(-1, 1)
@@ -54,26 +51,26 @@ def compute_residual_loss(model, num_points):
   t_pred = t_residual.requires_grad_()
   omg_pred = model(t_pred)
 
-  omg_clamped = torch.clamp(omg_pred, min=1e-10, max = 1e5)  #prevents zero/negatives, CHATGPT SUGGESTED FIX
+  omg_clamped = torch.clamp(omg_pred, min=1e-15, max = 1e5)  #prevents zero/negatives, CHATGPT SUGGESTED FIX
   tN_omg = G * m_chirp * omg_clamped / (c**3) #post-Newtonian relation
   tm_omg = G * m_total * omg_clamped / (c**3) #post-Newtonian relation
 
-  domg_dt = torch.autograd.grad(omg_pred, t_pred, grad_outputs=torch.ones_like(omg_pred), create_graph=True, retain_graph=True)[0] #domg/dt using autograd
-  residual = domg_dt - (96/5) * omg_pred**2 * tN_omg**(5/3) * (1 + (-743/336 - (11/4)*eta) * tm_omg**(2/3) * nu + Q_15 * tm_omg * nu**(3/2) + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg**(4/3) * nu**2) #LHS - RHS of provided equation
+  domg_dt = torch.autograd.grad(omg_clamped, t_pred, grad_outputs=torch.ones_like(omg_clamped), create_graph=True, retain_graph=True)[0] #domg/dt using autograd
+  residual = domg_dt - (96/5) * omg_clamped**2 * tN_omg**(5/3) * (1 + (-743/336 - (11/4)*eta) * tm_omg**(2/3) * nu + Q_15 * tm_omg * nu**(3/2) + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg**(4/3) * nu**2) #LHS - RHS of provided equation
   residual_loss = torch.mean(residual**2) #mean squared
   return residual_loss
 
 model = PINN()
 optimiser = optim.Adam(model.parameters(), lr=0.001) #Adam optimiser, learning rate
 
-epoch_num = 1000
+epoch_num = 100
 for epoch in range(epoch_num):
   optimiser.zero_grad() #clears old grads
 
   omg_pred_bc1 = model(t_bc1) #runs BC sampling point through PINN
   omg_target_bc1 = torch.zeros_like(omg_pred_bc1) #omg = 0 at t_coal
   omg_pred_bc2 = model(t_bc2) #runs BC sampling point through PINN
-  omg_target_bc2 = torch.zeros_like(omg_pred_bc2) #omg = enforced value at t_0
+  omg_target_bc2 = omg_target_bc2 = omg_enforced.view(-1,1) #omg = enforced value at t_0
 
   bc_loss1 = loss_MSE(omg_pred_bc1, omg_target_bc1)
   bc_loss2 = loss_MSE(omg_pred_bc2, omg_target_bc2)
@@ -86,7 +83,7 @@ for epoch in range(epoch_num):
 
   optimiser.step() #updates weights using gradients computed in back propagation
 
-  if epoch % 100 == 0:
+  if epoch % 1 == 0:
         print(f"Epoch {epoch} | Total: {total_loss.item():.5f} | BC: {bc_loss.item():.5f} | Residual: {residual_loss.item():.5f}")
 
 t_values = np.linspace(0, t_coal, 1000)
