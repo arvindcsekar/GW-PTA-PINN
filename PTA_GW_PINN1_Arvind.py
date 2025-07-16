@@ -54,7 +54,7 @@ def compute_residual_loss(model, num_points):
   t_pred = t_residual.requires_grad_()
   omg_pred = model(t_pred)
 
-  omg_clamped = torch.clamp(omg_pred, min=1e-10)  #prevents zero/negatives, CHATGPT SUGGESTED FIX
+  omg_clamped = torch.clamp(omg_pred, min=1e-10, max = 1e5)  #prevents zero/negatives, CHATGPT SUGGESTED FIX
   tN_omg = G * m_chirp * omg_clamped / (c**3) #post-Newtonian relation
   tm_omg = G * m_total * omg_clamped / (c**3) #post-Newtonian relation
 
@@ -66,14 +66,14 @@ def compute_residual_loss(model, num_points):
 model = PINN()
 optimiser = optim.Adam(model.parameters(), lr=0.001) #Adam optimiser, learning rate
 
-epoch_num = 5000
+epoch_num = 1000
 for epoch in range(epoch_num):
   optimiser.zero_grad() #clears old grads
 
   omg_pred_bc1 = model(t_bc1) #runs BC sampling point through PINN
   omg_target_bc1 = torch.zeros_like(omg_pred_bc1) #omg = 0 at t_coal
   omg_pred_bc2 = model(t_bc2) #runs BC sampling point through PINN
-  omg_target_bc2 = omg_enforced.expand_as(omg_pred_bc2) #omg = enforced value at t_0
+  omg_target_bc2 = torch.zeros_like(omg_pred_bc2) #omg = enforced value at t_0
 
   bc_loss1 = loss_MSE(omg_pred_bc1, omg_target_bc1)
   bc_loss2 = loss_MSE(omg_pred_bc2, omg_target_bc2)
@@ -82,7 +82,6 @@ for epoch in range(epoch_num):
   residual_loss = compute_residual_loss(model, num_points)
 
   total_loss = w1 * bc_loss + w2 * residual_loss
-
   total_loss.backward() #back propagation, calculates how much weights should change
 
   optimiser.step() #updates weights using gradients computed in back propagation
