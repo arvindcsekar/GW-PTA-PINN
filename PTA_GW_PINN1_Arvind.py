@@ -70,7 +70,7 @@ for epoch in range(epoch_num):
   omg_pred_bc1 = model(t_bc1) #runs BC sampling point through PINN
   omg_target_bc1 = torch.zeros_like(omg_pred_bc1) #omg = 0 at t_coal
   omg_pred_bc2 = model(t_bc2) #runs BC sampling point through PINN
-  omg_target_bc2 = omg_target_bc2 = omg_enforced.view(-1,1) #omg = enforced value at t_0
+  omg_target_bc2 = omg_target_bc2 - omg_enforced.view(-1,1) #omg = enforced value at t_0
 
   bc_loss1 = loss_MSE(omg_pred_bc1, omg_target_bc1)
   bc_loss2 = loss_MSE(omg_pred_bc2, omg_target_bc2)
