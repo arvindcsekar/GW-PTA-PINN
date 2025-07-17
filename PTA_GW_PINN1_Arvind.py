@@ -32,36 +32,40 @@ class PINN(nn.Module):
 num_points = 10000
 t_coal = 1.05*10**15
 t_0 = 0
-t = torch.rand(num_points, 1)*t_coal #b/w t=0 and coalescence time
+t = torch.rand(num_points, 1) #b/w t=0 and coalescence time, NORMALISED
 input = t.requires_grad_() #tells PyTorch to track gradients wrt inputs
 omg_enforced = torch.tensor(3.03* 1e-9, dtype=torch.float32) #kepler's relation for typical omg value at t=0, with M = 1e9 and R = 0.1pc
 
-t_bc1 = torch.tensor([t_coal], dtype=torch.float32).view(-1, 1)
-t_bc2 = torch.tensor([t_0], dtype=torch.float32).view(-1, 1)
+t_bc1 = torch.tensor([1.0], dtype=torch.float32).view(-1, 1)
+t_bc2 = torch.tensor([0.0], dtype=torch.float32).view(-1, 1)
 loss_MSE = nn.MSELoss() #mean squared
 
 
 
 #weights
-w1 = 0.5
-w2 = 0.7
+w1 = 0.1
+w2 = 0.95
 
 def compute_residual_loss(model, num_points):
-  t_residual = torch.rand(num_points, 1)*t_coal
+  t_residual = torch.rand(num_points, 1) #normalised
   t_pred = t_residual.requires_grad_()
   omg_pred = model(t_pred)
 
-  omg_clamped = torch.clamp(omg_pred, min=1e-15, max = 1e5)  #prevents zero/negatives, CHATGPT SUGGESTED FIX
-  tN_omg = G * m_chirp * omg_clamped / (c**3) #post-Newtonian relation
-  tm_omg = G * m_total * omg_clamped / (c**3) #post-Newtonian relation
+  omg_positive = torch.clamp(omg_pred, min=1e-15) #prevents zero/negatives, CHATGPT SUGGESTED FIX
+  tN_omg = G * m_chirp * omg_positive / (c**3) #post-Newtonian relation
+  tm_omg = G * m_total * omg_positive / (c**3) #post-Newtonian relation
 
-  domg_dt = torch.autograd.grad(omg_clamped, t_pred, grad_outputs=torch.ones_like(omg_clamped), create_graph=True, retain_graph=True)[0] #domg/dt using autograd
-  residual = domg_dt - (96/5) * omg_clamped**2 * tN_omg**(5/3) * (1 + (-743/336 - (11/4)*eta) * tm_omg**(2/3) * nu + Q_15 * tm_omg * nu**(3/2) + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg**(4/3) * nu**2) #LHS - RHS of provided equation
+  domg_dt = torch.autograd.grad(omg_positive, t_pred, grad_outputs=torch.ones_like(omg_positive), create_graph=True)[0] #domg/dt using autograd
+  t_physical = t_pred * t_coal #actual, upscaled time
+
+
+  rhs = ((96/5) * omg_positive**2 * tN_omg**(5/3) * (1 + (-743/336 - (11/4)*eta) * tm_omg**(2/3) * nu + Q_15 * tm_omg * nu**(3/2) + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg**(4/3) * nu**2))
+  residual = domg_dt - rhs #LHS - RHS of provided equation
   residual_loss = torch.mean(residual**2) #mean squared
   return residual_loss
 
 model = PINN()
-optimiser = optim.Adam(model.parameters(), lr=0.001) #Adam optimiser, learning rate
+optimiser = optim.Adam(model.parameters(), lr=0.001) #Adam optimiser w learning rate
 
 epoch_num = 100
 for epoch in range(epoch_num):
@@ -86,11 +90,11 @@ for epoch in range(epoch_num):
   if epoch % 1 == 0:
         print(f"Epoch {epoch} | Total: {total_loss.item():.5f} | BC: {bc_loss.item():.5f} | Residual: {residual_loss.item():.5f}")
 
-t_values = np.linspace(0, t_coal, 1000)
+t_values = np.linspace(0, 1, 1000) #normalised
 t_tensor = torch.tensor(t_values, dtype=torch.float32).view(-1, 1)
 omg_tensor = model(t_tensor)
 
-t_np = t_tensor.detach().numpy()
+t_np = (t_tensor*t_coal).detach().numpy() #converting back
 omg_np = omg_tensor.detach().numpy()
 
 plt.plot(t_np, omg_np, label='Predicted Evolution of SMBHB Orbital Frequency with Time')
