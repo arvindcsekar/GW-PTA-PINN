@@ -1,6 +1,6 @@
 Assumptions made:
 
-- SMBHB comprises 2 SMBHs, of $10^9 M_☉$ each, and 0.1pc apart
+- SMBHB comprises 2 SMBHs, of $10^9 M_☉$ each, and 0.1pc apart (Q_15 is simplified in its relation due to this mass equivalence)
 - $\omega_a$ is calculated using Kepler's relation (for omega at $t_0$) and initialised as $3.03 \times 10^{-9}$ Hz (valid, in the nHz range)
 - $\nu = 1$ (as instructed)
 - Used a PN expansion for $\tau(t)$ to convert $\omega(\tau)$ into $\omega(t)$ to plot: $\tau = 1.0 - \left(\frac{256.0}{5.0}\right) \omega_a \left(\frac{G m_{chirp}}{c^3}\right)^{5/3} t$, as found online (by leading order PN expansion)
