@@ -1,19 +1,19 @@
-Assumptions made: 
+Assumptions made:
 
-SMBHB comprises 2 SMBHs, of 10^9 ☉ each, and 0.1pc apart
-omg_a is calculated using Kepler's relation (for omega at t_0) and initialised as 3.03* 1e-9 Hz (valid, in the nHz range)
-nu = 1 (as instructed)
-Used a PN expansion for tau(t) to convert omega(tau) into omega(t) to plot: tau = 1.0 - ((256.0 / 5.0) * omega_a * ((G * m_chirp) / (c**3))**(5.0 / 3.0) * t), as found online (by leading order ON expansion)
-
+- SMBHB comprises 2 SMBHs, of $10^9 M_☉$ each, and 0.1pc apart
+- $\omega_a$ is calculated using Kepler's relation (for omega at $t_0$) and initialised as $3.03 \times 10^{-9}$ Hz (valid, in the nHz range)
+- $\nu = 1$ (as instructed)
+- Used a PN expansion for $\tau(t)$ to convert $\omega(\tau)$ into $\omega(t)$ to plot: $\tau = 1.0 - \left(\frac{256.0}{5.0}\right) \omega_a \left(\frac{G m_{chirp}}{c^3}\right)^{5/3} t$, as found online (by leading order PN expansion)
 
 Errors:
 
-Analytic solution produces the same values of tau and omega(t) for all values of t. Maybe the difference is too negligible to count? Code produces a straight line graph
-PINN converges very early (<200 epochs) - notably with the residual losses. Possible error in learning rate/weight assignment?
+- Analytic solution produces the same values of $\tau$ and $\omega(t)$ for all values of t. Maybe the difference is too negligible to count? Code produces a straight line graph
+- PINN converges very early (<200 epochs) - notably with the residual losses. Possible error in learning rate/weight assignment?
 
 Output and plots:
-tau tensor:  tensor([[1.],
-omg:  tensor([[3.0300e-09],
+
+- `tau` tensor: `tensor([[1.],`
+- `omg`: `tensor([[3.0300e-09],`
 
 # Training Loss Progress
 
