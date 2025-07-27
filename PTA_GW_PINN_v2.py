@@ -4,23 +4,8 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 
-G = torch.tensor(6.6743e-11, dtype=torch.float64) #big G constant
-c = torch.tensor(3e8, dtype=torch.float64) #light
-m = 1e9*1.989e30
-m_chirp = torch.tensor(((m )**2)**(3/5) / ((2 * m )**(1/5)), dtype=torch.float64)  # chirp mass
-m_total = torch.tensor(2*m, dtype=torch.float64) #total mass
-nu = torch.tensor(1.0, dtype=torch.float64) #stated
-eta = torch.tensor(0.25, dtype=torch.float64) #assuming both SMBHs of identical mass (1e9 solar masses)
-chi = torch.tensor(0.5, dtype=torch.float64) #high spin SMBH assumed (equal, aligned spin)
-Q_15 = 19/3*chi*eta -113/12*chi +4*np.pi #aligned spin case, 3rd term (delta) vanishes
-omg_a = 3.03 * 1e-9 #from Kepler relation
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import numpy as np
-import matplotlib.pyplot as plt
-
+torch.manual_seed(42)
+np.random.seed(42)
 G = torch.tensor(6.6743e-11, dtype=torch.float64) #big G constant
 c = torch.tensor(3e8, dtype=torch.float64) #light
 m = 1e9*1.989e30
