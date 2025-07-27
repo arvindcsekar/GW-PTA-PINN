@@ -14,7 +14,24 @@ eta = torch.tensor(0.25, dtype=torch.float64) #assuming both SMBHs of identical 
 chi = torch.tensor(0.5, dtype=torch.float64) #high spin SMBH assumed (equal, aligned spin)
 Q_15 = 19/3*chi*eta -113/12*chi +4*np.pi #aligned spin case, 3rd term (delta) vanishes
 omg_a = 3.03 * 1e-9 #from Kepler relation
- 
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+import matplotlib.pyplot as plt
+
+G = torch.tensor(6.6743e-11, dtype=torch.float64) #big G constant
+c = torch.tensor(3e8, dtype=torch.float64) #light
+m = 1e9*1.989e30
+m_chirp = torch.tensor(((m )**2)**(3/5) / ((2 * m )**(1/5)), dtype=torch.float64)  # chirp mass
+m_total = torch.tensor(2*m, dtype=torch.float64) #total mass
+nu = torch.tensor(1.0, dtype=torch.float64) #stated
+eta = torch.tensor(0.25, dtype=torch.float64) #assuming both SMBHs of identical mass (1e9 solar masses)
+chi = torch.tensor(0.5, dtype=torch.float64) #high spin SMBH assumed (equal, aligned spin)
+Q_15 = 19/3*chi*eta -113/12*chi +4*np.pi #aligned spin case, 3rd term (delta) vanishes
+omg_a = 3.03 * 1e-9 #from Kepler relation
+
 class PINN(nn.Module):
   def __init__(self):
     super(PINN, self).__init__()
@@ -47,7 +64,7 @@ loss_MSE = nn.MSELoss() #mean squared
 
 
 #weights
-w1 = 1000
+w1 = 10000
 w2 = 0.3
 
 def compute_residual_loss(model, num_points):
@@ -67,7 +84,7 @@ def compute_residual_loss(model, num_points):
   return residual_loss
 
 model = PINN()
-optimiser = optim.Adam(model.parameters(), lr=1e-4) #Adam optimiser w learning rate
+optimiser = optim.Adam(model.parameters(), lr=1e-2) #Adam optimiser w learning rate
 
 epoch_num = 2500
 for epoch in range(epoch_num):
@@ -112,5 +129,4 @@ plt.title("Evolution of SMBHB Orbital Frequency with Time")
 plt.xlabel('Time (years)')
 plt.ylabel('Orbital Frequency ω (Hz)')
 plt.legend()
-plt.semilogy(t_np, omg_np, label="Predicted ω(t)", color="orange")
 plt.show()
