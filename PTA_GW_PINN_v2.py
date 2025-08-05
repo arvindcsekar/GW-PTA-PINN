@@ -3,13 +3,14 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 torch.manual_seed(42)
 np.random.seed(42)
 G = torch.tensor(6.6743e-11, dtype=torch.float64) #big G constant
 c = torch.tensor(3e8, dtype=torch.float64) #light
 m = 1e9*1.989e30
-m_chirp = torch.tensor(((m )**2)**(3/5) / ((2 * m )**(1/5)), dtype=torch.float64)  # chirp mass
+m_chirp = torch.tensor((m**2)**(3/5) / ((2 * m )**(1/5)), dtype=torch.float64)  # chirp mass
 m_total = torch.tensor(2*m, dtype=torch.float64) #total mass
 nu = torch.tensor(1.0, dtype=torch.float64) #stated
 eta = torch.tensor(0.25, dtype=torch.float64) #assuming both SMBHs of identical mass (1e9 solar masses)
@@ -35,7 +36,7 @@ class PINN(nn.Module):
 
 
   def forward(self, x):
-    return torch.nn.functional.softplus(self.net(x)) + 1e-12
+    return torch.exp(self.net(x)) 
 
 num_points = 10000
 t_end = 10 * 365.25 * 24 * 3600  #10 years in seconds
@@ -49,8 +50,8 @@ loss_MSE = nn.MSELoss() #mean squared
 
 
 #weights
-w1 = 10000
-w2 = 0.3
+w1 = 1e6
+w2 = 7
 
 def compute_residual_loss(model, num_points):
   t_residual = torch.rand(num_points, 1, dtype=torch.float64) #normalised
@@ -71,7 +72,7 @@ def compute_residual_loss(model, num_points):
 model = PINN()
 optimiser = optim.Adam(model.parameters(), lr=1e-2) #Adam optimiser w learning rate
 
-epoch_num = 2500
+epoch_num = 3000
 for epoch in range(epoch_num):
   optimiser.zero_grad() #clears old grads
 
@@ -88,7 +89,7 @@ for epoch in range(epoch_num):
 
   optimiser.step() #updates weights using gradients computed in back propagation
 
-  if epoch % 100 == 0:
+  if epoch % 300 == 0:
         print(f"Epoch {epoch} | Total: {total_loss.item():.5f} | BC: {bc_loss.item():.5f} | Residual: {residual_loss.item():.5f}")
 
 t_values = np.linspace(0, 1, 1000) #normalised
@@ -97,10 +98,12 @@ t_tensor_upscale = t_tensor * t_end #upscale
 omg_tensor = model(t_tensor)
 tau = np.zeros(1000)
 omega_arr = np.zeros(1000)
+print("Sample predicted omega (Hz):", model(torch.tensor([[0.0], [0.5], [1.0]], dtype=torch.float64)).detach().numpy())
 
 tm = (G * m_total * omg_a) / (c**3)
 with torch.no_grad():
   tau_tensor = 1.0 - ((256.0 / 5.0) * omg_a * ((G * m_chirp) / (c**3))**(5.0/3.0) * t_tensor_upscale)
+  tau_tensor = torch.clamp(tau_tensor, min=1e-12)  # avoid division by zero or negative roots
   omega = omg_a * (((371/128)*eta**2 + (56975/16128)*eta + (1855099/903168)) * tm**(4/3) * nu**2 / tau_tensor**(7/8) + ((-3058673/1354752 - (617/192)*eta**2 - (5429/1344)*eta)) * tm**(4/3) * nu**2 / tau_tensor**(11/8) + ((-605/192)*eta**2 - (40865/8064)*eta - (2760245/1354752)) * tm**(4/3) * nu**2 / tau_tensor**(13/8) + ((1331/384)*eta**2 + (89903/16128)*eta + (6072539/2709504)) * tm**(4/3) * nu**2 / tau_tensor**(19/8) + (3/5) * tm * nu**(3/2) * (1 / tau_tensor**(11/8) - 1 / tau_tensor**(3/4)) * Q_15 + ( (11/8)*eta + (743/672) ) * tm**(2/3) * nu / tau_tensor**(5/8) - ( (11/8)*eta + (743/672) ) * tm**(2/3) * nu / tau_tensor**(11/8) + 1 / tau_tensor**(3/8))
   tau = tau_tensor.detach().numpy().flatten()
   omega_arr = omega.detach().numpy().flatten()
@@ -109,9 +112,10 @@ t_np = (t_tensor_upscale / (365.25 * 24 * 3600)).detach().numpy() #converting ba
 omg_np = omg_tensor.detach().numpy()
 
 plt.plot(t_np, omg_np, label="Predicted Evolution of SMBHB Orbital Frequency with Time", color="orange")
-#plt.plot(t_np, omega_arr, label="True Evolution of SMBHB Orbital Frequency with Time", color="green")
 plt.title("Evolution of SMBHB Orbital Frequency with Time")
 plt.xlabel('Time (years)')
 plt.ylabel('Orbital Frequency ω (Hz)')
 plt.legend()
+
+plt.grid(True)
 plt.show()
