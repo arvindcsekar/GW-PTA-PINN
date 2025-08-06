@@ -60,11 +60,18 @@ def compute_residual_loss(model, num_points):
 
   omg_positive = omg_pred
   t_physical = t_pred * t_end
-  tN_omg = G * m_chirp * omg_positive / (c**3) #post-Newtonian relation
-  tm_omg = G * m_total * omg_positive / (c**3) #post-Newtonian relation
+  tN_omg = (G * m_chirp * omg_positive / (c**3)) ** (5/3)
+  tm_omg_2by3 = (G * m_total * omg_positive / (c**3)) ** (2/3)
+  tm_omg_1 = (G * m_total * omg_positive / (c**3))  # For Q_15 term
+  tm_omg_4by3 = (G * m_total * omg_positive / (c**3)) ** (4/3)
 
   domg_dt = torch.autograd.grad(omg_positive, t_pred, grad_outputs=torch.ones_like(omg_positive),create_graph=True)[0]/t_end
-  rhs = ((96/5) * omg_positive**2 * tN_omg**(5/3) * (1 + (-743/336 - (11/4)*eta) * tm_omg**(2/3) * nu + Q_15 * tm_omg * nu**(3/2) + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg**(4/3) * nu**2))
+  rhs = rhs = ((96/5) * omg_positive**2 * tN_omg * (
+    1
+    + (-743/336 - (11/4)*eta) * tm_omg_2by3 * nu
+    + Q_15 * tm_omg_1 * nu**(3/2)
+    + (34103/18144 + (13661/2016)*eta + (59/18)*eta**2) * tm_omg_4by3 * nu**2
+))
   residual = domg_dt - rhs #LHS - RHS of provided equation
   residual_loss = torch.mean(residual**2) #mean squared
   return residual_loss
