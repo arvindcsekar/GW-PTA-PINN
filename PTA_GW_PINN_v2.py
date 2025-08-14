@@ -36,7 +36,7 @@ class PINN(nn.Module):
 
 
   def forward(self, x):
-    return torch.exp(self.net(x)) 
+    return torch.exp(self.net(x))
 
 num_points = 10000
 t_end = 10 * 365.25 * 24 * 3600  #10 years in seconds
@@ -53,8 +53,9 @@ loss_MSE = nn.MSELoss() #mean squared
 w1 = 1e6
 w2 = 7
 
+
 def compute_residual_loss(model, num_points):
-  t_residual = torch.rand(num_points, 1, dtype=torch.float64) #normalised
+  t_residual = torch.rand(num_points, 1) #normalised
   t_pred = t_residual.requires_grad_()
   omg_pred = model(t_pred)
 
@@ -80,6 +81,7 @@ model = PINN()
 optimiser = optim.Adam(model.parameters(), lr=1e-2) #Adam optimiser w learning rate
 
 epoch_num = 3000
+loss_arr = np.zeros(epoch_num)
 for epoch in range(epoch_num):
   optimiser.zero_grad() #clears old grads
 
@@ -93,7 +95,7 @@ for epoch in range(epoch_num):
   total_loss = w1 * bc_loss + w2 * residual_loss
   total_loss.backward() #back propagation, calculates how much weights should change
   torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-
+  loss_arr[epoch] = total_loss.item()
   optimiser.step() #updates weights using gradients computed in back propagation
 
   if epoch % 300 == 0:
@@ -124,5 +126,14 @@ plt.xlabel('Time (years)')
 plt.ylabel('Orbital Frequency ω (Hz)')
 plt.legend()
 
-plt.grid(True)
+plt.grid()
+plt.show()
+
+plt.plot(range(epoch_num), loss_arr, label = "Evolution of Loss with Epoch", color="blue")
+plt.title("Evolution of Loss with Epoch")
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.grid()
 plt.show()
