@@ -50,12 +50,12 @@ loss_MSE = nn.MSELoss() #mean squared
 
 
 #weights
-w1 = 1e6
+w1 = 9e10
 w2 = 7
 
 
 def compute_residual_loss(model, num_points):
-  t_residual = torch.rand(num_points, 1) #normalised
+  t_residual = torch.rand(num_points, 1, dtype=torch.float64) #normalised
   t_pred = t_residual.requires_grad_()
   omg_pred = model(t_pred)
 
@@ -63,7 +63,7 @@ def compute_residual_loss(model, num_points):
   t_physical = t_pred * t_end
   tN_omg = (G * m_chirp * omg_positive / (c**3)) ** (5/3)
   tm_omg_2by3 = (G * m_total * omg_positive / (c**3)) ** (2/3)
-  tm_omg_1 = (G * m_total * omg_positive / (c**3))  # For Q_15 term
+  tm_omg_1 = (G * m_total * omg_positive / (c**3))  #For Q_15 term
   tm_omg_4by3 = (G * m_total * omg_positive / (c**3)) ** (4/3)
 
   domg_dt = torch.autograd.grad(omg_positive, t_pred, grad_outputs=torch.ones_like(omg_positive),create_graph=True)[0]/t_end
