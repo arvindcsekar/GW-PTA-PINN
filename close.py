@@ -1,3 +1,134 @@
+#correct analytic:
+
+import numpy as np
+import matplotlib.pyplot as plt
+import astropy.constants as ac
+import astropy.units as u
+
+G = ac.G.value #big G constant
+c = ac.c.value #light
+
+m = 1e9 * ac.M_sun.value  #mass of one SMBH in kg (1e9 M_sun)
+m_total = 2 * m #total mass
+eta = 0.25 #assuming both SMBHs are identical mass
+nu = 1 #stated (keeps structure from original)
+chi = 0.5 #high spin SMBH assumed (equal, aligned spin)
+omg_a = (5e-7 / u.s).to(1/u.s).value #initial orbital angular frequency (rad/s)
+# chirp mass for equal masses: M * eta^(3/5)
+m_chirp = m_total * eta**(3/5)
+
+GMsun = ac.GM_sun.value
+dsun = GMsun/(c**2)
+tsun = GMsun/(c**3)
+pc = ac.pc.value
+chi_S = 0.5
+chi_A = 0.5
+delta=np.sqrt(1-4*eta)
+Q_15=(-113/12*chi_A*delta+19/3*chi_S*eta-113/12*chi_S+4*np.pi)
+
+def f(t, omg):
+    tN_omg = (G * m_chirp * omg / c**3)  #dimensionless combination
+    tm_omg_1 = (G * m_total * omg / c**3)
+    K = 96.0/5.0 * (G * m_chirp / c**3)**(5.0/3.0)
+    #PN correction factor (keeps original functional dependence, but applied as multiplier)
+    PN_factor = 1.0 + (59/18*eta**2 + 13661/2016*eta + 34103/18144) * tm_omg_1**(4.0/3.0) * nu**2 \
+                   + tm_omg_1 * nu**(3.0/2.0) * Q_15 + (-11/4*eta - 743/336) * tm_omg_1**(2.0/3.0) * nu
+    return K * omg**(11.0/3.0) * PN_factor
+
+def rk4(f, omg_0, t_f, t_0, h):
+  n_steps = int((t_f - t_0)/h + 1) #define number of steps
+  t = np.linspace(t_0, t_f, n_steps)
+  omg = np.zeros(n_steps) #initialises empty omg array of the size of n_steps
+  omg[0] = omg_0 #omg_0 at time t initialised
+
+  for i in range(1, n_steps):
+    k1 = h * f(t[i-1], omg[i-1])  #initial slope
+    k2 = h * f(t[i-1] + h/2, omg[i-1] + k1/2)  #slope at midpoint using k1
+    k3 = h * f(t[i-1] + h/2, omg[i-1] + k2/2)  #slope at midpoint using k2
+    k4 = h * f(t[i-1] + h, omg[i-1] + k3)      #end slope using k3
+
+    omg[i] = omg[i-1] + (k1 + 2*k2 + 2*k3 + k4)/6  #combine weighted slopes
+
+  return t, omg
+
+omg_0 = omg_a
+t_0 = 0
+t_f = (10 * u.yr).to(u.s).value
+h = (1000 * u.s).to(u.s).value
+
+t, omg = rk4(f, omg_0, t_f, t_0, h)
+t_years = t / (u.yr.to(u.s))
+
+print("First 10 omega values (rad/s):", omg[:10])  # first 10 omega values
+
+def get_omg(t, t_a, omg_a, m_c, eta, nu, chi_A, chi_S):
+    K = 96.0/5.0 * (G * m_c / c**3)**(5.0/3.0)
+    t_sec = np.asarray(t, dtype=float)  # t in seconds
+    omega0 = omg_a
+    denom = omega0**(-8.0/3.0) - (8.0/3.0) * K * (t_sec - t_a)
+    denom = np.maximum(denom, 1e-50)
+    omega = denom**(-3.0/8.0)
+    return omega
+
+t_test = np.linspace(0,10,100) * (u.yr.to(u.s))
+m_c = m_chirp
+eta = 1/4
+nu = 1
+chi_A = chi_S = 0.5
+
+omg_arr = get_omg(t_test, t_0, omg_a, m_c, eta, nu, chi_A, chi_S)
+omg_arr_Q = get_omg(t_test, t_0, omg_a, m_c, eta, nu, chi_A, chi_S)
+
+plt.plot(t_test/ (u.yr.to(u.s)), omg_arr, linestyle="-", color="green")
+plt.plot(t_test/ (u.yr.to(u.s)), omg_arr_Q, linestyle="-.", color="yellow")
+plt.plot(t_years, omg, linestyle="--", color="red")
+plt.grid(True)
+plt.legend(["Analytic (LO)", "Analytic (LO) dup","Runge-Kutta (numeric)"])
+plt.xlabel("time (in years)")
+plt.ylabel(r"$\omega$ (rad/s)")
+plt.show()
+
+def rk4_phi(f, omg, phi_0, t_f, t_0, h):
+  n_steps2 = int((t_f - t_0)/h + 1) #define number of steps
+  t = np.linspace(t_0, t_f, n_steps2)
+  phi = np.zeros(n_steps2) #initialises empty phi array of the size of n_steps2
+  phi[0] = phi_0 #phi_0 at time t initialised
+
+  t_omg = np.linspace(t_0, t_f, len(omg))
+
+  def omega_of_tau(tau):
+      return np.interp(tau, t_omg, omg)
+
+  for w in range(0, n_steps2-1):
+    h_local = t[w+1] - t[w]
+    ti = t[w]
+
+    k1 = omega_of_tau(ti)
+    k2 = omega_of_tau(ti + 0.5*h_local)
+    k3 = omega_of_tau(ti + 0.5*h_local)
+    k4 = omega_of_tau(ti + h_local)
+
+    phi[w+1] = phi[w] + (h_local/6.0)*(k1 + 2*k2 + 2*k3 + k4)
+
+  return t, phi
+
+omg_0 = omg_a
+t_0 = 0
+t_f = (10 * u.yr).to(u.s).value
+h = (1000 * u.s).to(u.s).value
+phi_0 = 0
+
+t, phi = rk4_phi(f, omg, phi_0, t_f, t_0, h)
+t_years = t / (u.yr.to(u.s))
+
+plt.plot(t_years, phi, color="green")
+plt.grid(True)
+plt.title("Evolution of Orbital Phase with Time using a Runge-Kutta Model")
+plt.xlabel("time (in years)")
+plt.ylabel(r"$\phi$ (rad)")
+plt.show()
+
+
 #main one, no analytic, almost working PINN w batching
 import numpy as np
 import matplotlib.pyplot as plt
@@ -200,9 +331,6 @@ def compute_residual_loss_phi(model_phi, t_batch, model):
     residual = dphi_dtau - omega_here * t_end
     return torch.mean(residual**2)
 
-# ----------------------
-# Train phi-PINN
-# ----------------------
 phi_enforced = torch.tensor([[0.0]], dtype=torch.float64)
 model_phi = PINN_Phi()
 opt_phi = optim.Adam(model_phi.parameters(), lr=1e-3)
@@ -226,9 +354,6 @@ for epoch in range(epoch_num):
     if epoch % 100 == 0:
         print(f"[φ] Epoch {epoch} | Total {total_loss.item():.3e} | BC {bc_loss.item():.3e} | Resid {residual_loss.item():.3e}")
 
-# ----------------------
-# Predictions
-# ----------------------
 t_vals = torch.linspace(0, 1, 1000, dtype=torch.float64).view(-1,1)
 t_phys = t_vals * t_end
 
@@ -237,7 +362,7 @@ phi_pred = model_phi(t_vals).detach().numpy()
 
 t_years = (t_phys / u.yr.to(u.s)).detach().numpy()
 
-# Plot phi
+
 plt.plot(t_years, phi_pred, label="φ(t)", color="blue")
 plt.xlabel("Time (years)")
 plt.ylabel("Orbital Phase φ (rad)")
