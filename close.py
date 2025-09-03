@@ -171,103 +171,75 @@ plt.legend()
 plt.grid()
 plt.show()
 
-class PINN2(nn.Module):
-  def __init__(self):
-    super(PINN2, self).__init__()
-    self.net = nn.Sequential(
-      nn.Linear(1, 64), #input 1 neuron (time), then 32 neurons in each hidden layer
-      nn.Tanh(), #activation function
-      nn.Linear(64, 64),
-      nn.Tanh(),
-      nn.Linear(64, 64),
-      nn.Tanh(),
-      nn.Linear(64, 64),
-      nn.Tanh(),
-      nn.Linear(64, 1) #output layer, 1 neuron (solution, omega)
-    )
-    self.double() #Ensure the model parameters are of type float64
+class PINN_Phi(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(1, 64),
+            nn.Tanh(),
+            nn.Linear(64, 64),
+            nn.Tanh(),
+            nn.Linear(64, 64),
+            nn.Tanh(),
+            nn.Linear(64, 1)
+        )
+        self.double()
 
+    def forward(self, t):
+        return torch.exp(self.net(t))
 
-  def forward(self, x):
-    return torch.sigmoid(self.net(x))
+def compute_residual_loss_phi(model_phi, t_batch, model):
+    t_pred = t_batch.requires_grad_()
+    phi_pred = model_phi(t_pred)
 
-num_points = 10000
-t_end = (10 * u.yr).to(u.s).value  #10 years in seconds
-t_0 = 0
-t = torch.rand(num_points, 1, dtype=torch.float64) #b/w t=0 and coalescence time, NORMALISED
-input = t.requires_grad_() #tells PyTorch to track gradients wrt inputs
-omg_enforced = torch.tensor((5e-7 / u.s).to(1/u.s).value, dtype=torch.float64) #kepler's relation for typical omg value at t=0, with M = 1e9 and R = 0.1pc
+    dphi_dtau = torch.autograd.grad(phi_pred, t_pred,
+                                    grad_outputs=torch.ones_like(phi_pred),
+                                    create_graph=True)[0]
+    omega_here = model(t_pred)
 
-t_bc2 = torch.tensor([0.0], dtype=torch.float64).view(-1, 1)
-loss_MSE = nn.MSELoss() #mean squared
+    residual = dphi_dtau - omega_here * t_end
+    return torch.mean(residual**2)
 
-phi_enforced = torch.tensor(0.0, dtype=torch.float64)
-
-def compute_residual_loss2(model2, num_points):
-  t_residual = torch.rand(num_points, 1, dtype=torch.float64) #normalised
-  t_pred = t_residual.requires_grad_()
-  phi_pred = model2(t_pred)
-  dphi_dt = torch.autograd.grad(phi_pred, t_pred, grad_outputs=torch.ones_like(phi_pred),create_graph=True)[0]/t_end
-  with torch.no_grad():
-      omega_here = model(t_residual)
-
-  residual = dphi_dt - omega_here
-  residual_loss = torch.mean(residual**2) #mean squared
-  return residual_loss
-
-model2 = PINN2()
-batch_size2 = 512
-optimiser2 = optim.Adam(model2.parameters(), lr=1e-3) #Adam optimiser w learning rate
-loss_arr2 = np.zeros(epoch_num)
-
+# ----------------------
+# Train phi-PINN
+# ----------------------
+phi_enforced = torch.tensor([[0.0]], dtype=torch.float64)
+model_phi = PINN_Phi()
+opt_phi = optim.Adam(model_phi.parameters(), lr=1e-3)
+loss_arr_phi = []
 
 for epoch in range(epoch_num):
-  optimiser2.zero_grad() #clears old grads
+    opt_phi.zero_grad()
+    phi_pred_bc = model_phi(t_bc2)
+    bc_loss = loss_MSE(phi_pred_bc, phi_enforced)
 
-  phi_pred_bc2 = model2(t_bc2) #runs BC sampling point through PINN
-  phi_target_bc2 = phi_enforced.view(-1,1) #phi = enforced value at t_0
-  bc_loss2 = loss_MSE(phi_pred_bc2, phi_target_bc2)
+    idx = torch.randperm(num_points)[:1024]
+    t_batch = t[idx]
+    residual_loss = compute_residual_loss_phi(model_phi, t_batch, model)
 
-  indices2 = torch.randperm(num_points)[:batch_size2] #picks random batch from collocation points, makes sure it's not picked again
-  t_batch2 = t[indices2].requires_grad_() #computes gradients
-  residual_loss = compute_residual_loss(model2, t_batch2)
+    total_loss = 1e7*bc_loss + 1e7*residual_loss
+    total_loss.backward()
+    torch.nn.utils.clip_grad_norm_(model_phi.parameters(), 1.0)
+    opt_phi.step()
 
-  residual_loss2 = compute_residual_loss2(model2, num_points)
-  w1 = 1e7
-  w2 = 1e7
+    loss_arr_phi.append(total_loss.item())
+    if epoch % 100 == 0:
+        print(f"[φ] Epoch {epoch} | Total {total_loss.item():.3e} | BC {bc_loss.item():.3e} | Resid {residual_loss.item():.3e}")
 
-  total_loss2 = w1 * bc_loss2 + w2 * residual_loss2 
-  total_loss2.backward() #back propagation, calculates how much weights should change
-  torch.nn.utils.clip_grad_norm_(model2.parameters(), max_norm=1.0)
-  loss_arr2[epoch] = total_loss2.item()
-  optimiser2.step() #updates weights using gradients computed in back propagation
+# ----------------------
+# Predictions
+# ----------------------
+t_vals = torch.linspace(0, 1, 1000, dtype=torch.float64).view(-1,1)
+t_phys = t_vals * t_end
 
-  if epoch % 100 == 0:
-        print(f"Epoch {epoch} | Total: {total_loss2.item():.5f} | BC: {bc_loss2.item():.5f} | Residual: {residual_loss2.item():.5f}")
+omega_pred = model(t_vals).detach().numpy()
+phi_pred = model_phi(t_vals).detach().numpy()
 
-t_values2 = np.linspace(0, 1, 1000) #normalised
-t_tensor2 = torch.tensor(t_values2, dtype=torch.float64).view(-1, 1)
-t_tensor_upscale2 = t_tensor2 * t_end #upscale
-phi_tensor = model2(t_tensor2)
-phi_arr = np.zeros(1000)
-print("Sample predicted phi:", model2(torch.tensor([[0.0], [0.5], [1.0]], dtype=torch.float64)).detach().numpy())
+t_years = (t_phys / u.yr.to(u.s)).detach().numpy()
 
-t_np2 = (t_tensor_upscale2 / u.yr.to(u.s)).detach().numpy() #converting back
-phi_np = phi_tensor.detach().numpy()
-
-plt.plot(t_np2, phi_np, label="Predicted Evolution of SMBHB Orbital Phase with Time", color="blue")
-plt.title("Evolution of SMBHB Orbital Phase with Time")
-plt.xlabel('Time (years)')
-plt.ylabel('Orbital Phase Φ (rad)')
-plt.legend()
-
-plt.grid()
-plt.show()
-
-plt.plot(range(epoch_num), loss_arr2, label = "Evolution of Loss with Epoch", color="blue")
-plt.title("Evolution of Loss with Epoch")
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-
-plt.grid()
+# Plot phi
+plt.plot(t_years, phi_pred, label="φ(t)", color="blue")
+plt.xlabel("Time (years)")
+plt.ylabel("Orbital Phase φ (rad)")
+plt.title("Evolution of SMBHB Orbital Phase")
+plt.grid(); plt.legend(); plt.show()
