@@ -129,7 +129,7 @@ plt.ylabel(r"$\phi$ (rad)")
 plt.show()
 
 
-#main one, no analytic, almost working PINN w batching
+#main one, no analytic, 99% PINN w batching
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.constants as ac
@@ -293,7 +293,7 @@ plt.legend()
 plt.grid()
 plt.show()
 
-plt.plot(range(epoch_num), loss_arr, label = "Evolution of Loss with Epoch", color="blue")
+plt.plot(range(epoch_num), loss_arr, label = "Evolution of Loss with Epoch", color="red")
 plt.title("Evolution of Loss with Epoch")
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
@@ -302,7 +302,7 @@ plt.legend()
 plt.grid()
 plt.show()
 
-class PINN_Phi(nn.Module):
+class PINN2(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
@@ -319,35 +319,34 @@ class PINN_Phi(nn.Module):
     def forward(self, t):
         return torch.exp(self.net(t))
 
-def compute_residual_loss_phi(model_phi, t_batch, model):
+def compute_residual_loss_phi(model2, t_batch, model):
     t_pred = t_batch.requires_grad_()
-    phi_pred = model_phi(t_pred)
+    phi_pred = model2(t_pred)
 
-    dphi_dtau = torch.autograd.grad(phi_pred, t_pred,
-                                    grad_outputs=torch.ones_like(phi_pred),
-                                    create_graph=True)[0]
+    dphi_dtau = torch.autograd.grad(phi_pred, t_pred, grad_outputs=torch.ones_like(phi_pred), create_graph=True)[0]
     omega_here = model(t_pred)
 
     residual = dphi_dtau - omega_here * t_end
     return torch.mean(residual**2)
 
 phi_enforced = torch.tensor([[0.0]], dtype=torch.float64)
-model_phi = PINN_Phi()
-opt_phi = optim.Adam(model_phi.parameters(), lr=1e-3)
+model2 = PINN2()
+opt_phi = optim.Adam(model2.parameters(), lr=1e-3)
 loss_arr_phi = []
+w1 = w2 = 1e7
 
 for epoch in range(epoch_num):
     opt_phi.zero_grad()
-    phi_pred_bc = model_phi(t_bc2)
+    phi_pred_bc = model2(t_bc2)
     bc_loss = loss_MSE(phi_pred_bc, phi_enforced)
 
     idx = torch.randperm(num_points)[:1024]
     t_batch = t[idx]
-    residual_loss = compute_residual_loss_phi(model_phi, t_batch, model)
+    residual_loss = compute_residual_loss_phi(model2, t_batch, model)
 
-    total_loss = 1e7*bc_loss + 1e7*residual_loss
+    total_loss = w1 *bc_loss + w2 * residual_loss
     total_loss.backward()
-    torch.nn.utils.clip_grad_norm_(model_phi.parameters(), 1.0)
+    torch.nn.utils.clip_grad_norm_(model2.parameters(), 1.0)
     opt_phi.step()
 
     loss_arr_phi.append(total_loss.item())
@@ -357,8 +356,7 @@ for epoch in range(epoch_num):
 t_vals = torch.linspace(0, 1, 1000, dtype=torch.float64).view(-1,1)
 t_phys = t_vals * t_end
 
-omega_pred = model(t_vals).detach().numpy()
-phi_pred = model_phi(t_vals).detach().numpy()
+phi_pred = model2(t_vals).detach().numpy()
 
 t_years = (t_phys / u.yr.to(u.s)).detach().numpy()
 
@@ -367,4 +365,15 @@ plt.plot(t_years, phi_pred, label="φ(t)", color="blue")
 plt.xlabel("Time (years)")
 plt.ylabel("Orbital Phase φ (rad)")
 plt.title("Evolution of SMBHB Orbital Phase")
-plt.grid(); plt.legend(); plt.show()
+plt.grid()
+plt.legend()
+plt.show()
+
+plt.plot(range(epoch_num), loss_arr_phi, label = "Evolution of Loss with Epoch", color="Red")
+plt.title("Evolution of Loss with Epoch")
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.grid()
+plt.show()
