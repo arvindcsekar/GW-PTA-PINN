@@ -78,34 +78,40 @@ w1 = 1e17
 w2 = 7
 
 def compute_residual_loss(model, num_points):
+    # Random residual points
     t_residual = torch.rand(num_points, 1, dtype=torch.float64) * t_end
     chi_1_residual = torch.rand(num_points, 1, dtype=torch.float64)*2 - 1
     chi_2_residual = torch.rand(num_points, 1, dtype=torch.float64)*2 - 1
+
     batch_inputs = torch.cat([t_residual, chi_1_residual, chi_2_residual], dim=1).requires_grad_()
-    chi_A_residual = 0.5*(chi_1_residual - chi_2_residual)
-    chi_S_residual = 0.5*(chi_1_residual + chi_2_residual)
 
-    Q_15 = (-113/12 * chi_A_residual * delta + 19/3 * chi_S_residual * eta - 113/12 * chi_S_residual + 4*np.pi)
+    chi_A_residual = 0.5 * (chi_1_residual - chi_2_residual)
+    chi_S_residual = 0.5 * (chi_1_residual + chi_2_residual)
 
+    Q_15 = -113/12 * chi_A_residual * delta + 19/3 * chi_S_residual * eta - 113/12 * chi_S_residual + 4*np.pi
 
     omg_pred = model(batch_inputs)
-    t_phys = t_residual * t_end
+    tN_omg = (G * m_chirp * omg_pred / c**3)
+    tm_omg = (G * m_total * omg_pred / c**3)
 
-    tN_ref = m_c * omg_a * tsun
-    tau = 1.0 - (256.0/5.0) * omg_a * (tN_ref**(5.0/3.0)) * t_phys
-    tau = torch.clamp(tau, min=1e-12)
+    domg_dt = torch.autograd.grad(
+        outputs=omg_pred,
+        inputs=batch_inputs[:, 0:1], 
+        grad_outputs=torch.ones_like(omg_pred),
+        create_graph=True
+    )[0] / t_end
+  
+    rhs = (96/5) * (
+        1
+        + (59/18*eta**2 + 13661/2016*eta + 34103/18144) * tm_omg**(4/3) * nu**2
+        + (-11/4*eta - 743/336) * tm_omg**(2/3) * nu
+        + Q_15 * tm_omg * nu**(3/2)
+    ) * omg_pred**2 * tN_omg**(5/3)
 
-    omg_positive = omg_pred
-    tN_omg = (G * m_chirp * omg_positive / (c**3))
-    tm_omg = (G * m_total * omg_positive / (c**3))  #For Q_15 term
-
-    domg_dt = torch.autograd.grad(omg_positive, batch_inputs, grad_outputs=torch.ones_like(omg_positive),create_graph=True)[0]/t_end
-    rhs = (96/5) * (1 + ((59/18*eta**2 + 13661/2016*eta + 34103/18144)/tau**(7/8)) * tm_omg**(4/3) * nu**2 + ((-11/4*eta - 743/336)/tau**(5/8)) * tm_omg**(2/3) * nu + (Q_15 / tau**(3/4)) * tm_omg * nu**(3/2)) * omg_positive**2 * tN_omg**(5/3)
-
-    residual = domg_dt - rhs #LHS - RHS of provided equation
-    residual_loss = torch.mean(residual**2) #mean squared
+    residual = domg_dt - rhs
+    residual_loss = torch.mean(residual**2)
     return residual_loss
-    #try batches
+
 
 model = PINN()
 optimiser = optim.Adam(model.parameters(), lr=1e-3) #Adam optimiser w learning rate
