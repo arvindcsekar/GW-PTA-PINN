@@ -116,7 +116,7 @@ for epoch in range(epoch_num):
 
     residual_loss = compute_residual_loss(model, num_points)
     w1 = 1
-    w2 = 1e8
+    w2 = 1e9
 
     total_loss = w1 * bc_loss + w2 * residual_loss
     total_loss.backward()
@@ -234,8 +234,8 @@ def compute_residual_loss_phi(model2, t_batch, model):
     phi_pred = model2(t_pred)
     dphi_dtau = torch.autograd.grad(phi_pred, t_pred, grad_outputs=torch.ones_like(phi_pred), create_graph=True)[0]
 
-    chi1 = torch.zeros_like(t_pred)
-    chi2 = torch.zeros_like(t_pred)
+    chi1 = torch.full_like(t_pred, 0, dtype=torch.float64)
+    chi2 = torch.full_like(t_pred, 0, dtype=torch.float64)
     m1_norm = torch.ones_like(t_pred)
     m2_norm = torch.ones_like(t_pred)
 
@@ -252,7 +252,7 @@ loss_arr_phi = []
 w1_phi = 1e12
 w2_phi = 1e7
 
-tau_pool = torch.linspace(0.0, 1.0, steps=num_points, dtype=torch.float64).view(-1, 1)
+t_pool = torch.linspace(0.0, 1.0, steps=num_points, dtype=torch.float64).view(-1, 1)
 
 for epoch in range(epoch_num):
     opt_phi.zero_grad()
@@ -262,8 +262,8 @@ for epoch in range(epoch_num):
     bc_loss_phi = loss_MSE(phi_pred_bc, phi_enforced)
 
     idx = torch.randperm(num_points)[:1024]
-    tau_batch = tau_pool[idx]
-    residual_loss_phi = compute_residual_loss_phi(model2, tau_batch, model)
+    t_batch = t_pool[idx]
+    residual_loss_phi = compute_residual_loss_phi(model2, t_batch, model)
 
     total_loss_phi = w1_phi * bc_loss_phi + w2_phi * residual_loss_phi
     total_loss_phi.backward()
