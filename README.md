@@ -14,6 +14,10 @@ The ω-PINN was designed to solve the relativistic evolution of orbital frequenc
 
 The PINN was trained over a normalized time domain τ ∈ [0, 1], corresponding to a physical range from first 0 to + 10 years and then from −Δt to +10 years, where Δt is the light travel delay for a pulsar at a distance of 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimisation with gradient clipping and high residual weighting to enforce physical fidelity.
 
+## RK4 Ground Truth Comparison
+
+To validate the PINN outputs, a Runge-Kutta 4th order integrator was implemented for both ω(t) and φ(t). The RK4 evolution served as a ground truth reference for the PINN predictions - primarily for the φ-PINN which had none. The ω evolution matched analytic 2PN and Newtonian models, confirming the correctness of the PINN training. The φ evolution was used to compare against the φ-PINN output, highlighting the misalignment and guiding architectural debugging.
+
 ### Validation Against Analytic Models
 
 The ω-PINN was validated against both Newtonian and 2PN analytic models across multiple spin configurations. The results demonstrate excellent agreement with analytic predictions, confirming the physical correctness of the learned evolution.
@@ -56,20 +60,11 @@ The orbital phase φ(t) evolution is governed by the instantaneous orbital frequ
 <img width="793" height="455" alt="time (in years)" src="https://github.com/user-attachments/assets/ed51c919-2f6d-4f44-a54d-3964cc26b3b6" />
 
 
-
-### Architectural Design
-
-The φ-PINN is a separate neural network with a single input neuron (normalized time τ) and a single output neuron (φ). The training objective includes a hard boundary condition φ(0) = 0 and a residual loss computed via autograd. The derivative dφ/dτ is scaled to physical time and compared against ω(t) evaluated at the same τ values using the ω-PINN.
-
-The architecture was trained using the same optimization strategy as the ω-PINN, with careful attention to gradient flow, domain normalization, and residual weighting. Despite correct implementation of the residual logic, the φ-PINN output remained misaligned, showing a negative slope and incorrect amplitude. This was likely due to output scaling, initialization bias, and the narrow dynamic range of ω(t) over the training domain.
-
 ### Results and Observations
 
-The φ-PINN architecture was successfully implemented and trained, and the output was evaluated at both Earth and Pulsar epochs. The structure of the phase evolution is present, but the slope and scale are incorrect, indicating training instability and architectural limitations.
+The ω-PINN and φ-PINN architecture were successfully implemented and trained over a multiparameter system, and the output was then extended to be evaluated at both Earth and Pulsar epochs. The structure of the phase evolution is present, but the slope and scale are incorrect, indicating training instability and architectural limitations.
 
-<img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Earth" src="https://github.com/user-attachments/assets/hjR6DjrVb3CsioLYJoqDM.png" />
-
-<img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Pulsar" src="https://github.com/user-attachments/assets/a5Cqv8pgGeutPKDUxwcgv.png" />
+<img width="685" height="470" alt="download" src="https://github.com/user-attachments/assets/6b523fd5-2644-4d78-8090-c9dd92861e78" />
 
 Attempts to correct the output using bias terms, output scaling, and loss rebalancing were unsuccessful within the project timeline. The residual logic remains valid, and the architecture is extensible for future refinement.
 
@@ -79,7 +74,7 @@ Attempts to correct the output using bias terms, output scaling, and loss rebala
 
 ### Physical Setup
 
-To model pulsar timing residuals, the Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to a pulsar at 1 kpc. ω(t) and φ(t) were evaluated at both epochs using normalized time inputs, and the gravitational wave polarizations h₊ and h× were computed using standard waveform expressions.
+To model pulsar timing residuals, the Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to a pulsar at 1 kpc. ω(t) and φ(t) were evaluated at both epochs using normalized time inputs, and the gravitational wave polarisations h₊ and h× were computed using standard waveform expressions.
 
 The timing residuals were derived from the difference in strain between Earth and Pulsar epochs, scaled by a geometric factor based on the angle between the pulsar and the GW source.
 
@@ -87,38 +82,21 @@ The timing residuals were derived from the difference in strain between Earth an
 
 Residuals were computed for h₊, h×, and RMS, and plotted over the Earth time domain. While the residuals are structurally correct, waveform fidelity is compromised due to phase inaccuracies in φ(t).
 
-<img width="680" height="470" alt="Timing Residual h+" src="https://github.com/user-attachments/assets/7TqcTCXR9XBDov1A23Wfg.png" />
-
-<img width="680" height="470" alt="Timing Residual hx" src="https://github.com/user-attachments/assets/rUU5TKKVuaijBq4aHi84c.png" />
-
-<img width="680" height="470" alt="Total Timing Residual" src="https://github.com/user-attachments/assets/kVvPsh5Eacevib2nRFpn7.png" />
-
----
-
-## RK4 Ground Truth Comparison
-
-To validate the PINN outputs, a Runge-Kutta 4th order integrator was implemented for both ω(t) and φ(t). The RK4 evolution served as a ground truth reference for the PINN predictions. The ω evolution matched analytic 2PN and Newtonian models, confirming the correctness of the PINN training. The φ evolution was used to compare against the φ-PINN output, highlighting the misalignment and guiding architectural debugging.
+<img width="630" height="470" alt="download-1" src="https://github.com/user-attachments/assets/ac784e72-8835-4e69-b0d0-8de7b400b736" />
+<img width="630" height="470" alt="download-2" src="https://github.com/user-attachments/assets/d4074eac-13c8-4466-a77e-4f179136fff5" />
+<img width="630" height="470" alt="download" src="https://github.com/user-attachments/assets/2f95247c-5c2e-4c5a-b361-ed3918bdd6a3" />
 
 ---
 
 ## Architectural Commentary
 
-This project demonstrates the power and limitations of PINNs in modeling relativistic astrophysical systems. The ω-PINN successfully captured the dynamics of SMBHB orbital frequency evolution, including spin-aligned effects and post-Newtonian corrections. The φ-PINN, while structurally complete, revealed the sensitivity of residual-based training to output scaling, initialization, and domain coverage.
-
-The use of normalized time domains, hard boundary conditions, and autograd-based residuals reflects a rigorous approach to scientific machine learning. The integration of pulsar timing effects and waveform recovery showcases the extensibility of the architecture, even if the final results remain imperfect.
-
-The codebase is modular, reproducible, and grounded in physical reasoning. All modeling choices — from normalization to residual construction — are documented and physically motivated.
+This project demonstrates the power and limitations of PINNs in modeling relativistic astrophysical systems. The ω-PINN successfully captured the dynamics of SMBHB orbital frequency evolution, including spin-aligned effects and post-Newtonian corrections. The φ-PINN, while structurally complete, revealed the sensitivity of residual-based training to output scaling and initialisation. The integration of pulsar timing effects and waveform recovery showcases the extensibility of the architecture, even if the final results remain imperfect.
 
 ---
 
 ## Limitations
 
 - φ-PINN output remains misaligned despite correct residual logic.
-- Pulsar timing residuals are structurally correct but lack waveform fidelity due to phase inaccuracies.
-- Training instability and narrow dynamic range of ω(t) over the domain limit the expressivity of φ-PINN.
+- Pulsar timing residuals are structurally correct but lack waveform fidelity due to frequency and phase inaccuracies.
 - Further refinement of architecture and training strategy is required for full waveform recovery.
-
----
-
-## File Structure
 
