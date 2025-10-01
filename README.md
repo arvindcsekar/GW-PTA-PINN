@@ -6,7 +6,7 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 ---
 
-## ✅ Achievements
+## Achievements
 
 ### 1. **Multi-parameter PINN for ω(t)**
 - Developed a robust PINN architecture that models the evolution of orbital frequency ω(t) over time.
