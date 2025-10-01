@@ -17,11 +17,7 @@ Notebook implementing Runge-Kutta 4th order integration for ω(t) and φ(t), use
 Script version of the full PINN pipeline, including ω-PINN, φ-PINN, and pulsar timing residuals. Designed for reproducible execution outside the notebook environment. Contains all architectural components and inference logic.
 
 ### `working_multiparam.ipynb`
-Notebook demonstrating the successful training and validation of the multi-parameter ω-PINN. Includes input sampling, residual construction, and comparison with analytic models across spin configurations.
-
-### `PINN_GWs_Progress.pdf`
-Progress report summarising early results, architectural decisions, and validation plots. Includes RK4 comparisons and initial PINN outputs. Serves as a snapshot of development prior to final integration of the pulsar term.
-
+identical, with minor parameter changes
 
 
 ## Overview
