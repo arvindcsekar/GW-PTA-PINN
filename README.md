@@ -25,7 +25,7 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 | χ₁ = χ₂ = 0.5 | 5.648e−7         | 5.679e−7       | [5.644e−7]        |
 | χ₁ = χ₂ = −0.5| 5.683e−7         | 5.679e−7       | [5.683e−7]        |
 
-- ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases. The figures for the above table can be seen below:
+ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases. The figures for the above table can be seen below:
 <img width="630" height="470" alt="Evolution of SMBHB Orbital Frequency with Time at 0 X1, X2" src="https://github.com/user-attachments/assets/2842e845-43cf-4d94-8034-6d285b479353" />
 
 <img width="682" height="470" alt="5 40e-07" src="https://github.com/user-attachments/assets/ccd30249-25e9-4ba3-a87d-c11c57417650" />
