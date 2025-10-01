@@ -2,22 +2,21 @@
 
 ## Overview
 
-This repository contains a PINN framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs), focusing on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects. The PINN takes 5 input neurons - which are later hardcoded in the samlping - of BH spin parameters, masses, and time itself. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform reconstruction for pulsar timing arrays (PTAs) using the forward problem approach.
+This repository contains a PINN framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs), focusing on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects. The PINN takes 5 input neurons - which are later hardcoded in the sampling - of BH spin parameters, masses, and time itself. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform reconstruction for pulsar timing arrays (PTAs) using the forward problem approach.
 
 ---
 
-## Achievements
+## Orbital Frequency PINN (ω-PINN)
 
-### 1. **Multi-parameter PINN for ω(t)**
-- Developed a robust PINN architecture that models the evolution of orbital frequency ω(t) over time.
-- Inputs: normalized time τ ∈ [0, 1], spin parameters χ₁, χ₂, and normalized masses m₁, m₂.
-- Output: ω(t) in physical units (rad/s), trained to match 2PN dynamics.
-- Hard boundary condition enforced: ω(τ=0) = 5e−7 rad/s.
-- Residual loss derived from 2PN evolution equations, including spin terms and chirp mass scaling.
+### Implementation Summary
 
-### 2. **Validation Against Analytic Models**
-- Compared PINN predictions against analytic 2PN and Newtonian models.
-- Achieved high fidelity across multiple spin configurations:
+The ω-PINN was designed to solve the relativistic evolution of orbital frequency for circular SMBHB systems. The network takes normalized time, spin parameters, and normalized masses as input, and outputs ω(t) in physical units. The training objective combines a hard boundary condition at τ = 0 and a residual loss derived from the 2PN evolution equation, which includes spin-orbit coupling, chirp mass scaling, and post-Newtonian corrections.
+
+The PINN was trained over a normalized time domain τ ∈ [0, 1], corresponding to a physical range from −Δt to +10 years, where Δt is the light travel delay for a pulsar at 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimization with gradient clipping and high residual weighting to enforce physical fidelity.
+
+### Validation Against Analytic Models
+
+The ω-PINN was validated against both Newtonian and 2PN analytic models across multiple spin configurations. The results demonstrate excellent agreement with analytic predictions, confirming the physical correctness of the learned evolution.
 
 | Configuration | 2PN ω(t)        | Newtonian ω(t) | ω-PINN Output     |
 |---------------|------------------|----------------|-------------------|
@@ -25,7 +24,7 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 | χ₁ = χ₂ = 0.5 | 5.648e−7         | 5.679e−7       | 5.644e−7          |
 | χ₁ = χ₂ = −0.5| 5.683e−7         | 5.679e−7       | 5.683e−7          |
 
-ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases. The figures for the above table can be seen below:
+The figures for the above table can be seen below:
 
 <img width="630" height="470" alt="Evolution of SMBHB Orbital Frequency with Time at 0 X1, X2" src="https://github.com/user-attachments/assets/2842e845-43cf-4d94-8034-6d285b479353" />
 
@@ -35,71 +34,41 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 ---
 
-## 3. **Architecture Extension for φ(t)**
+## Orbital Phase PINN (φ-PINN)
 
-### 🔧 Motivation and Background
-For circular SMBHB systems, the orbital phase φ(t) is a critical observable for gravitational wave detection and timing residual recovery. The phase evolution is governed by:
+### Motivation and Physical Context
 
+In circular SMBHB systems, the orbital phase φ(t) is a critical observable for gravitational wave detection and timing residual recovery. Its evolution is governed by the instantaneous orbital frequency ω(t), and accurate modeling of φ(t) is essential for waveform reconstruction. The φ-PINN was designed to learn this evolution by solving the differential equation dφ/dt = ω(t), using the previously trained ω-PINN as input.
 
+### Architectural Design
 
-\[
-\frac{d\phi}{dt} = \omega(t)
-\]
+The φ-PINN is a separate neural network with a single input neuron (normalized time τ) and a single output neuron (φ). The training objective includes a hard boundary condition φ(0) = 0 and a residual loss computed via autograd. The derivative dφ/dτ is scaled to physical time and compared against ω(t) evaluated at the same τ values using the ω-PINN.
 
+The architecture was trained using the same optimization strategy as the ω-PINN, with careful attention to gradient flow, domain normalization, and residual weighting. Despite correct implementation of the residual logic, the φ-PINN output remained misaligned, showing a negative slope and incorrect amplitude. This was likely due to output scaling, initialization bias, and the narrow dynamic range of ω(t) over the training domain.
 
+### Results and Observations
 
-This project extends the PINN framework to solve this ODE using a second neural network, trained via residual minimization. The goal was to recover φ(t) directly from the learned ω(t), enabling full waveform reconstruction.
-
-### 🧠 Architectural Design
-- A second PINN (`PINN2`) was constructed with a single input neuron (normalized time τ) and a single output neuron (φ).
-- The residual loss was computed using autograd to obtain \( \frac{d\phi}{d\tau} \), scaled by the physical time range.
-- ω(t) was dynamically evaluated from the trained ω-PINN during φ-PINN training.
-- A boundary condition φ(0) = 0 was enforced to anchor the phase evolution.
-
-### 📉 Results and Observations
-- The φ-PINN architecture was successfully implemented and trained.
-- However, the output φ(t) showed a negative slope and incorrect amplitude, despite correct residual logic.
-- Attempts to correct via output scaling, bias terms, and loss rebalancing were unsuccessful within the project timeline.
-
-### 📊 Plots
+The φ-PINN architecture was successfully implemented and trained, and the output was evaluated at both Earth and Pulsar epochs. The structure of the phase evolution is present, but the slope and scale are incorrect, indicating training instability and architectural limitations.
 
 <img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Earth" src="https://github.com/user-attachments/assets/hjR6DjrVb3CsioLYJoqDM.png" />
 
 <img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Pulsar" src="https://github.com/user-attachments/assets/a5Cqv8pgGeutPKDUxwcgv.png" />
 
-These plots show the φ(t) evolution at Earth and Pulsar epochs. While the structure is present, the slope and scale are incorrect, indicating training instability.
+Attempts to correct the output using bias terms, output scaling, and loss rebalancing were unsuccessful within the project timeline. The residual logic remains valid, and the architecture is extensible for future refinement.
 
 ---
 
-## 4. **Pulsar Timing Residuals**
+## Pulsar Timing Residuals
 
-### 🌌 Physical Setup
-- Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to 1 kpc.
-- ω(t) and φ(t) were evaluated at both epochs using normalized time inputs.
-- Polarizations h₊ and h× were computed using:
+### Physical Setup
 
+To model pulsar timing residuals, the Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to a pulsar at 1 kpc. ω(t) and φ(t) were evaluated at both epochs using normalized time inputs, and the gravitational wave polarizations h₊ and h× were computed using standard waveform expressions.
 
+The timing residuals were derived from the difference in strain between Earth and Pulsar epochs, scaled by a geometric factor based on the angle between the pulsar and the GW source.
 
-\[
-h_+ \propto \omega^{2/3} \cos(2\phi), \quad h_× \propto \omega^{2/3} \sin(2\phi)
-\]
+### Results
 
-
-
-### ⏱️ Residuals Computed
-- Timing residuals were derived using:
-
-
-
-\[
-R_+(t) = \frac{1}{2} \frac{h_+(t_{\text{Earth}}) - h_+(t_{\text{Pulsar}})}{1 + \cos\theta}
-\]
-
-
-
-- Residuals were computed for h₊, h×, and RMS.
-
-### 📊 Plots
+Residuals were computed for h₊, h×, and RMS, and plotted over the Earth time domain. While the residuals are structurally correct, waveform fidelity is compromised due to phase inaccuracies in φ(t).
 
 <img width="680" height="470" alt="Timing Residual h+" src="https://github.com/user-attachments/assets/7TqcTCXR9XBDov1A23Wfg.png" />
 
@@ -107,31 +76,32 @@ R_+(t) = \frac{1}{2} \frac{h_+(t_{\text{Earth}}) - h_+(t_{\text{Pulsar}})}{1 + \
 
 <img width="680" height="470" alt="Total Timing Residual" src="https://github.com/user-attachments/assets/kVvPsh5Eacevib2nRFpn7.png" />
 
-While the residuals are structurally correct, waveform fidelity is compromised due to phase inaccuracies.
+---
+
+## RK4 Ground Truth Comparison
+
+To validate the PINN outputs, a Runge-Kutta 4th order integrator was implemented for both ω(t) and φ(t). The RK4 evolution served as a ground truth reference for the PINN predictions. The ω evolution matched analytic 2PN and Newtonian models, confirming the correctness of the PINN training. The φ evolution was used to compare against the φ-PINN output, highlighting the misalignment and guiding architectural debugging.
 
 ---
 
-## 🧪 RK4 Ground Truth Comparison
+## Architectural Commentary
 
-To validate the PINN outputs, a Runge-Kutta 4th order integrator was implemented for both ω(t) and φ(t). The RK4 evolution served as a ground truth reference for the PINN predictions.
+This project demonstrates the power and limitations of PINNs in modeling relativistic astrophysical systems. The ω-PINN successfully captured the dynamics of SMBHB orbital frequency evolution, including spin-aligned effects and post-Newtonian corrections. The φ-PINN, while structurally complete, revealed the sensitivity of residual-based training to output scaling, initialization, and domain coverage.
 
-- ω(t) RK4 evolution matched analytic 2PN and Newtonian models.
-- φ(t) RK4 evolution was used to compare against PINN phase recovery, highlighting the misalignment.
+The use of normalized time domains, hard boundary conditions, and autograd-based residuals reflects a rigorous approach to scientific machine learning. The integration of pulsar timing effects and waveform recovery showcases the extensibility of the architecture, even if the final results remain imperfect.
 
----
-
-## ⚠️ Limitations
-
-### φ(t) Evolution
-- Residual logic implemented correctly, but φ-PINN output remains misaligned.
-- Phase evolution shows incorrect slope and scale, likely due to output scaling and training instability.
-- Attempts to correct via bias terms and loss rebalancing were unsuccessful within time constraints.
-
-### Pulsar Term Fidelity
-- Earth/Pulsar ω(t) evaluations structurally correct, but frequency evolution is too flat over narrow slices.
-- Timing residuals computed, but waveform fidelity is compromised by phase inaccuracies.
+The codebase is modular, reproducible, and grounded in physical reasoning. All modeling choices — from normalization to residual construction — are documented and physically motivated.
 
 ---
 
-## 📁 File Structure
+## Limitations
+
+- φ-PINN output remains misaligned despite correct residual logic.
+- Pulsar timing residuals are structurally correct but lack waveform fidelity due to phase inaccuracies.
+- Training instability and narrow dynamic range of ω(t) over the domain limit the expressivity of φ-PINN.
+- Further refinement of architecture and training strategy is required for full waveform recovery.
+
+---
+
+## File Structure
 
