@@ -1,4 +1,4 @@
-# Using PINNS to Model SMBHB Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric System
+# Using PINNS to Model Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric SMBHB System
 
 ## Overview
 
