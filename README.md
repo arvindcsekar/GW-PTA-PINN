@@ -33,39 +33,90 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 <img width="685" height="470" alt="Evolution of SMBHB Orbital Frequency with Time at -0 5 x1  X2, 1e9 ml, m2" src="https://github.com/user-attachments/assets/ae7cd544-50b2-4b38-aaab-8e37b9116df2" />
 
+---
 
-### 3. **Architecture Extension for φ(t)**
-- Implemented a second PINN to model orbital phase φ(t), trained via residual:
-  
+## 3. **Architecture Extension for φ(t)**
 
-\[
-  \frac{d\phi}{dt} = \omega(t)
-  \]
+### 🔧 Motivation and Background
+For circular SMBHB systems, the orbital phase φ(t) is a critical observable for gravitational wave detection and timing residual recovery. The phase evolution is governed by:
 
 
-- Enforced φ(0) = 0 boundary condition.
-- Used autograd to compute dφ/dτ and scaled to physical time.
-- Architecture structurally complete and integrated with ω-PINN.
-
-### 4. **Pulsar Timing Residuals**
-- Incorporated Earth and Pulsar terms using light travel delay Δt.
-- Evaluated ω(t) and φ(t) at both Earth and Pulsar epochs.
-- Computed h₊ and h× polarizations:
-  
 
 \[
-  h_+ \propto \omega^{2/3} \cos(2\phi), \quad h_× \propto \omega^{2/3} \sin(2\phi)
-  \]
+\frac{d\phi}{dt} = \omega(t)
+\]
 
 
-- Derived timing residuals:
-  
+
+This project extends the PINN framework to solve this ODE using a second neural network, trained via residual minimization. The goal was to recover φ(t) directly from the learned ω(t), enabling full waveform reconstruction.
+
+### 🧠 Architectural Design
+- A second PINN (`PINN2`) was constructed with a single input neuron (normalized time τ) and a single output neuron (φ).
+- The residual loss was computed using autograd to obtain \( \frac{d\phi}{d\tau} \), scaled by the physical time range.
+- ω(t) was dynamically evaluated from the trained ω-PINN during φ-PINN training.
+- A boundary condition φ(0) = 0 was enforced to anchor the phase evolution.
+
+### 📉 Results and Observations
+- The φ-PINN architecture was successfully implemented and trained.
+- However, the output φ(t) showed a negative slope and incorrect amplitude, despite correct residual logic.
+- Attempts to correct via output scaling, bias terms, and loss rebalancing were unsuccessful within the project timeline.
+
+### 📊 Plots
+
+<img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Earth" src="https://github.com/user-attachments/assets/hjR6DjrVb3CsioLYJoqDM.png" />
+
+<img width="680" height="470" alt="Evolution of SMBHB Orbital Phase Pulsar" src="https://github.com/user-attachments/assets/a5Cqv8pgGeutPKDUxwcgv.png" />
+
+These plots show the φ(t) evolution at Earth and Pulsar epochs. While the structure is present, the slope and scale are incorrect, indicating training instability.
+
+---
+
+## 4. **Pulsar Timing Residuals**
+
+### 🌌 Physical Setup
+- Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to 1 kpc.
+- ω(t) and φ(t) were evaluated at both epochs using normalized time inputs.
+- Polarizations h₊ and h× were computed using:
+
+
 
 \[
-  R_+(t) = \frac{1}{2} \frac{h_+(t_{\text{Earth}}) - h_+(t_{\text{Pulsar}})}{1 + \cos\theta}
-  \]
+h_+ \propto \omega^{2/3} \cos(2\phi), \quad h_× \propto \omega^{2/3} \sin(2\phi)
+\]
 
 
+
+### ⏱️ Residuals Computed
+- Timing residuals were derived using:
+
+
+
+\[
+R_+(t) = \frac{1}{2} \frac{h_+(t_{\text{Earth}}) - h_+(t_{\text{Pulsar}})}{1 + \cos\theta}
+\]
+
+
+
+- Residuals were computed for h₊, h×, and RMS.
+
+### 📊 Plots
+
+<img width="680" height="470" alt="Timing Residual h+" src="https://github.com/user-attachments/assets/7TqcTCXR9XBDov1A23Wfg.png" />
+
+<img width="680" height="470" alt="Timing Residual hx" src="https://github.com/user-attachments/assets/rUU5TKKVuaijBq4aHi84c.png" />
+
+<img width="680" height="470" alt="Total Timing Residual" src="https://github.com/user-attachments/assets/kVvPsh5Eacevib2nRFpn7.png" />
+
+While the residuals are structurally correct, waveform fidelity is compromised due to phase inaccuracies.
+
+---
+
+## 🧪 RK4 Ground Truth Comparison
+
+To validate the PINN outputs, a Runge-Kutta 4th order integrator was implemented for both ω(t) and φ(t). The RK4 evolution served as a ground truth reference for the PINN predictions.
+
+- ω(t) RK4 evolution matched analytic 2PN and Newtonian models.
+- φ(t) RK4 evolution was used to compare against PINN phase recovery, highlighting the misalignment.
 
 ---
 
@@ -82,5 +133,5 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 ---
 
-## File Structure
+## 📁 File Structure
 
