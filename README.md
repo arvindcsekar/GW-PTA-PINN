@@ -1,4 +1,4 @@
-# SMBHB PINN Modeling — Final Project Submission
+# Using PINNS to Model SMBHB Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric System
 
 ## Overview
 
