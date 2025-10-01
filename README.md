@@ -64,8 +64,6 @@ The orbital phase φ(t) evolution is governed by the instantaneous orbital frequ
 
 The ω-PINN and φ-PINN architecture were successfully implemented and trained over a multiparameter system, and the output was then extended to be evaluated at both Earth and Pulsar epochs. The structure of the phase evolution is present, but the slope and scale are incorrect, indicating training instability and architectural limitations.
 
-<img width="685" height="470" alt="download" src="https://github.com/user-attachments/assets/6b523fd5-2644-4d78-8090-c9dd92861e78" />
-
 Attempts to correct the output using bias terms, output scaling, and loss rebalancing were unsuccessful within the project timeline. The residual logic remains valid, and the architecture is extensible for future refinement.
 
 ---
