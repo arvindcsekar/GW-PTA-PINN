@@ -10,9 +10,9 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 ### Implementation Summary
 
-The ω-PINN was designed to solve the relativistic evolution of orbital frequency for circular SMBHB systems. The network takes normalized time, spin parameters, and normalized masses as input, and outputs ω(t) in physical units. The training objective combines a hard boundary condition at τ = 0 and a residual loss derived from the 2PN evolution equation, which includes spin-orbit coupling, chirp mass scaling, and post-Newtonian corrections.
+The ω-PINN was designed to solve the relativistic evolution of orbital frequency for circular spin-aligned SMBHB systems. The network takes normalised time, spin parameters, and normalised masses as input, and outputs ω(t) in physical units. It comprises a hard boundary condition at τ = 0 and a residual loss derived from the 2PN evolution equation, which includes spin-orbit coupling, chirp mass scaling, and post-Newtonian corrections.
 
-The PINN was trained over a normalized time domain τ ∈ [0, 1], corresponding to a physical range from −Δt to +10 years, where Δt is the light travel delay for a pulsar at 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimization with gradient clipping and high residual weighting to enforce physical fidelity.
+The PINN was trained over a normalized time domain τ ∈ [0, 1], corresponding to a physical range from first 0 to + 10 years and then from −Δt to +10 years, where Δt is the light travel delay for a pulsar at a distance of 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimisation with gradient clipping and high residual weighting to enforce physical fidelity.
 
 ### Validation Against Analytic Models
 
@@ -38,7 +38,21 @@ The figures for the above table can be seen below:
 
 ### Motivation and Physical Context
 
-In circular SMBHB systems, the orbital phase φ(t) is a critical observable for gravitational wave detection and timing residual recovery. Its evolution is governed by the instantaneous orbital frequency ω(t), and accurate modeling of φ(t) is essential for waveform reconstruction. The φ-PINN was designed to learn this evolution by solving the differential equation dφ/dt = ω(t), using the previously trained ω-PINN as input.
+The orbital phase φ(t) evolution is governed by the instantaneous orbital frequency ω(t), and its accurate modeling is essential for waveform reconstruction. The φ-PINN was designed to learn this evolution by solving the linked differential equation dφ/dt = ω(t), using the previously trained ω-PINN as input. The lack of a specific analytic solution for the φ-PINN led to the construction of an RK4 numerical model to be used as the ground truth. The plots can be seen below:
+
+χ₁ = χ₂ = 0
+<img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/d5b3a357-b58b-470c-80be-138c12c5cccb" />
+<img width="771" height="455" alt="download-2" src="https://github.com/user-attachments/assets/7faf87a9-2113-4dfc-9729-d5e6f55a8bc6" />
+
+χ₁ = χ₂ = 0.5
+<img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/0177e890-29d3-41d9-b78e-d83630b9bece" />
+<img width="787" height="455" alt="time (in years)" src="https://github.com/user-attachments/assets/fe090a13-5094-40d1-9b98-2f66edd7121f" />
+
+χ₁ = χ₂ = -0.5
+<img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/44e7353e-6a3a-40c0-a6b2-b2e88bc33ead" />
+<img width="793" height="455" alt="time (in years)" src="https://github.com/user-attachments/assets/ed51c919-2f6d-4f44-a54d-3964cc26b3b6" />
+
+
 
 ### Architectural Design
 
