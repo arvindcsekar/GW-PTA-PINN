@@ -21,9 +21,9 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 | Configuration | 2PN ω(t)        | Newtonian ω(t) | ω-PINN Output     |
 |---------------|------------------|----------------|-------------------|
-| χ₁ = χ₂ = 0   | —                | —              | [5.644e−7]        |
-| χ₁ = χ₂ = 0.5 | 5.648e−7         | 5.679e−7       | [5.644e−7]        |
-| χ₁ = χ₂ = −0.5| 5.683e−7         | 5.679e−7       | [5.683e−7]        |
+| χ₁ = χ₂ = 0   | 5.665e-7          | 5.679e-7      | 5.664e−7          |
+| χ₁ = χ₂ = 0.5 | 5.648e−7         | 5.679e−7       | 5.644e−7          |
+| χ₁ = χ₂ = −0.5| 5.683e−7         | 5.679e−7       | 5.683e−7          |
 
 ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases. The figures for the above table can be seen below:
 
