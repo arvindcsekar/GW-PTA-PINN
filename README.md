@@ -1,4 +1,4 @@
-# Using PINNS to Model Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric SMBHB System
+# Using Physics-Informed Neural Networks (PINNs) to Model Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric Supermassive Black Hole (SMBHB) System
 
 ## Overview
 
