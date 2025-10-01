@@ -81,8 +81,8 @@ The timing residuals were derived from the difference in strain between Earth an
 Residuals were computed for h₊, h×, and RMS, and plotted over the Earth time domain. While the residuals are structurally correct, waveform fidelity is compromised due to phase inaccuracies in φ(t).
 
 <img width="630" height="470" alt="download-1" src="https://github.com/user-attachments/assets/ac784e72-8835-4e69-b0d0-8de7b400b736" />
-<img width="630" height="470" alt="download-2" src="https://github.com/user-attachments/assets/d4074eac-13c8-4466-a77e-4f179136fff5" />
 <img width="630" height="470" alt="download" src="https://github.com/user-attachments/assets/2f95247c-5c2e-4c5a-b361-ed3918bdd6a3" />
+<img width="630" height="470" alt="download-2" src="https://github.com/user-attachments/assets/d4074eac-13c8-4466-a77e-4f179136fff5" />
 
 ---
 
