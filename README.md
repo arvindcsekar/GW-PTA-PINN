@@ -2,9 +2,7 @@
 
 ## Overview
 
-This repository contains a physics-informed neural network (PINN) framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs). The project focuses on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects.
-
-The work was carried out as part of a research module on gravitational wave modeling using machine learning techniques. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform recovery for pulsar timing arrays (PTAs).
+This repository contains a PINN framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs), focusing on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects. The PINN takes 5 input neurons - which are later hardcoded in the samlping - of BH spin parameters, masses, and time itself. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform reconstruction for pulsar timing arrays (PTAs) using the forward problem approach.
 
 ---
 
@@ -27,7 +25,13 @@ The work was carried out as part of a research module on gravitational wave mode
 | χ₁ = χ₂ = 0.5 | 5.648e−7         | 5.679e−7       | [5.644e−7]        |
 | χ₁ = χ₂ = −0.5| 5.683e−7         | 5.679e−7       | [5.683e−7]        |
 
-- ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases.
+- ω-PINN consistently matched the expected relativistic evolution across spin-aligned cases. The figures for the above table can be seen below:
+<img width="630" height="470" alt="Evolution of SMBHB Orbital Frequency with Time at 0 X1, X2" src="https://github.com/user-attachments/assets/2842e845-43cf-4d94-8034-6d285b479353" />
+
+<img width="682" height="470" alt="5 40e-07" src="https://github.com/user-attachments/assets/ccd30249-25e9-4ba3-a87d-c11c57417650" />
+
+<img width="685" height="470" alt="Evolution of SMBHB Orbital Frequency with Time at -0 5 x1  X2, 1e9 ml, m2" src="https://github.com/user-attachments/assets/ae7cd544-50b2-4b38-aaab-8e37b9116df2" />
+
 
 ### 3. **Architecture Extension for φ(t)**
 - Implemented a second PINN to model orbital phase φ(t), trained via residual:
