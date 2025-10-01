@@ -41,14 +41,17 @@ The figures for the above table can be seen below:
 The orbital phase φ(t) evolution is governed by the instantaneous orbital frequency ω(t), and its accurate modeling is essential for waveform reconstruction. The φ-PINN was designed to learn this evolution by solving the linked differential equation dφ/dt = ω(t), using the previously trained ω-PINN as input. The lack of a specific analytic solution for the φ-PINN led to the construction of an RK4 numerical model to be used as the ground truth. The plots can be seen below:
 
 χ₁ = χ₂ = 0
+
 <img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/d5b3a357-b58b-470c-80be-138c12c5cccb" />
 <img width="771" height="455" alt="download-2" src="https://github.com/user-attachments/assets/7faf87a9-2113-4dfc-9729-d5e6f55a8bc6" />
 
 χ₁ = χ₂ = 0.5
+
 <img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/0177e890-29d3-41d9-b78e-d83630b9bece" />
 <img width="787" height="455" alt="time (in years)" src="https://github.com/user-attachments/assets/fe090a13-5094-40d1-9b98-2f66edd7121f" />
 
 χ₁ = χ₂ = -0.5
+
 <img width="571" height="455" alt="Evolution of SMBHB Orbital Phase" src="https://github.com/user-attachments/assets/44e7353e-6a3a-40c0-a6b2-b2e88bc33ead" />
 <img width="793" height="455" alt="time (in years)" src="https://github.com/user-attachments/assets/ed51c919-2f6d-4f44-a54d-3964cc26b3b6" />
 
