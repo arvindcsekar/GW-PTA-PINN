@@ -12,7 +12,7 @@ This repository contains a PINN framework for modeling the orbital evolution of 
 
 The ω-PINN was designed to solve the relativistic evolution of orbital frequency for circular spin-aligned SMBHB systems. The network takes normalised time, spin parameters, and normalised masses as input, and outputs ω(t) in physical units. It comprises a hard boundary condition at τ = 0 and a residual loss derived from the 2PN evolution equation, which includes spin-orbit coupling, chirp mass scaling, and post-Newtonian corrections.
 
-The PINN was trained over a normalized time domain τ ∈ [0, 1], corresponding to a physical range from first 0 to + 10 years and then from −Δt to +10 years, where Δt is the light travel delay for a pulsar at a distance of 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimisation with gradient clipping and high residual weighting to enforce physical fidelity.
+The PINN was trained over a normalised time domain τ ∈ [0, 1], corresponding to a physical range from first 0 to + 10 years and then from −Δt to +10 years, where Δt is the light travel delay for a pulsar at a distance of 1 kpc. The residual loss was computed using autograd to obtain dω/dτ, scaled appropriately to physical time. The network was trained using Adam optimisation with gradient clipping and high residual weighting to enforce physical fidelity.
 
 ## RK4 Ground Truth Comparison
 
@@ -72,7 +72,7 @@ Attempts to correct the output using bias terms, output scaling, and loss rebala
 
 ### Physical Setup
 
-To model pulsar timing residuals, the Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to a pulsar at 1 kpc. ω(t) and φ(t) were evaluated at both epochs using normalized time inputs, and the gravitational wave polarisations h₊ and h× were computed using standard waveform expressions.
+To model pulsar timing residuals, the Earth and Pulsar terms were evaluated using a light travel delay Δt corresponding to a pulsar at 1 kpc. ω(t) and φ(t) were evaluated at both epochs using normalised time inputs, and the gravitational wave polarisations h₊ and h× were computed using standard waveform expressions.
 
 The timing residuals were derived from the difference in strain between Earth and Pulsar epochs, scaled by a geometric factor based on the angle between the pulsar and the GW source.
 
