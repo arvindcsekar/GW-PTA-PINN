@@ -106,12 +106,6 @@ Residuals were computed for h₊, h×, and RMS, and plotted over the Earth time 
 
 ---
 
-## Architectural Commentary
-
-This project demonstrates the power and limitations of PINNs in modeling relativistic astrophysical systems. The ω-PINN successfully captured the dynamics of SMBHB orbital frequency evolution, including spin-aligned effects and post-Newtonian corrections. The φ-PINN, while structurally complete, revealed the sensitivity of residual-based training to output scaling and initialisation. The integration of pulsar timing effects and waveform recovery showcases the extensibility of the architecture, even if the final results remain imperfect.
-
----
-
 ## Limitations
 
 - φ-PINN output remains misaligned despite correct residual logic.
