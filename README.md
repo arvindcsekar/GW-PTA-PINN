@@ -123,3 +123,7 @@ Residuals were computed for h₊, h×, and RMS, and plotted over the Earth time 
 - Pulsar timing residuals are structurally correct but lack waveform fidelity due to frequency and phase inaccuracies.
 - Further refinement of architecture and training strategy is required for full waveform recovery.
 
+
+## Author
+
+Arvind Chandrasekar
