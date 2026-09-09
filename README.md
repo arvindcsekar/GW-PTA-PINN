@@ -1,9 +1,23 @@
-# Using Physics-Informed Neural Networks (PINNs) to Model Parameter Evolution in a Spin-Aligned Post-Newtonian Non-Eccentric Supermassive Black Hole (SMBHB) System
+# GW-PTA-PINN
+
+Physics-Informed Neural Networks for modelling relativistic orbital evolution 
+in spin-aligned supermassive black hole binaries, applied to pulsar timing array residuals.
+
+## Overview
+This repository contains a PINN framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs), focusing on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects. The PINN takes 5 input neurons - which are later hardcoded in the sampling - of BH spin parameters, masses, and time itself. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform reconstruction for pulsar timing arrays (PTAs) using the forward problem approach.
+
+## Installation
+\`\`\`bash
+git clone https://github.com/arvindcsekar/GW-PTA-PINN.git
+cd GW-PTA-PINN
+pip install -r requirements.txt
+\`\`\`
+
+## Usage
+Run `notebooks/PINN_GW_multiparam_pulsar.ipynb` for the full ω-PINN/φ-PINN pipeline, 
+or `src/current_multiparam_PTA.py` for a script-based reproduction.
 
 ## Repository Structure
-
-This repository contains all code, notebooks, and documentation developed for modelling the relativistic evolution of SMBHB systems using Physics-Informed Neural Networks (PINNs). Each file is modular and serves a distinct purpose in the overall pipeline.
-
 ### `PINN_GW_multiparam_pulsar.ipynb`
 Main notebook implementing the full PINN architecture for ω(t) and φ(t), including the pulsar term. Contains training loops, residual definitions, waveform recovery, and visualisations. The pulsar term is structurally included but remains physically inaccurate due to phase misalignment.
 
@@ -19,12 +33,9 @@ Script version of the full PINN pipeline, including ω-PINN, φ-PINN, and pulsar
 ### `working_multiparam.ipynb`
 identical, with minor parameter changes
 
+## Author
+Arvind Chandrasekar - Imperial College London
 
-## Overview
-
-This repository contains a PINN framework for modeling the orbital evolution of Supermassive Black Hole Binaries (SMBHBs), focusing on the time evolution of orbital frequency ω(t) and phase φ(t) under relativistic conditions, incorporating spin-aligned binary parameters and pulsar timing effects. The PINN takes 5 input neurons - which are later hardcoded in the sampling - of BH spin parameters, masses, and time itself. The PINN architecture was designed to reproduce post-Newtonian (PN) dynamics and enable waveform reconstruction for pulsar timing arrays (PTAs) using the forward problem approach.
-
----
 
 ## Orbital Frequency PINN (ω-PINN)
 
